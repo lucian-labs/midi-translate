@@ -1,17 +1,11 @@
 /* midi-translate demo — https://midi-translate.lucianlabs.ca
  *
- * NOTE the import shape. midi-translate ships CommonJS only (module.exports,
- * no ESM build, no "exports" map), so a namespace import resolves to an empty
- * object under a bundler. The default import is the whole module.exports.
+ * The package now declares an "exports" map with a real ESM entry, so named
+ * imports work directly. Vite aliases the specifier at the working tree, so
+ * this page always shows the behaviour of the source in this repo.
  */
 
-import mt from 'midi-translate'
-
-const { noteToString, stringToNote, noteToFrequency } = mt as {
-  noteToString: (n: number) => string | false
-  stringToNote: (s: string) => number
-  noteToFrequency: (n: number) => number
-}
+import { noteToString, stringToNote, noteToFrequency } from 'midi-translate'
 
 declare const waveloop: { ready: (...tags: string[]) => Promise<unknown> }
 
@@ -69,15 +63,18 @@ function installSection() {
   const install = document.createElement('wl-install')
   install.setAttribute('pkg', 'midi-translate')
   const c = document.createElement('wl-code')
-  c.textContent = `// CommonJS
-const { noteToString, noteToFrequency } = require('midi-translate')
+  c.textContent = `// ESM
+import { noteToString, stringToNote, noteToFrequency } from 'midi-translate'
 
-// ESM — default import only; there is no ESM build
-import mt from 'midi-translate'
+// CommonJS
+const { noteToString } = require('midi-translate')
 
-mt.noteToString(60)      // 'c4'
-mt.stringToNote('c4')    // 60
-mt.noteToFrequency(69)   // 440`
+noteToString(60)          // 'c4'
+noteToString(128)         // null — outside 0-127
+stringToNote('C4')        // 60 — case-insensitive
+stringToNote('nope')      // null
+noteToFrequency(69)       // 440
+noteToFrequency(69, 432)  // 432 — pick your own A4`
   s.append(install, c)
 }
 
@@ -177,8 +174,8 @@ function converterSection() {
     h(
       'p',
       'wl-muted',
-      'Parse a note name back to a number. Names are lowercase and sharps only — ' +
-        'c4, f#3, a#-1. Anything it cannot parse comes back as -1.'
+      'Parse a note name back to a number. Sharps only, any case — c4, F#3, ' +
+        'a#-1. Anything it cannot parse, or that lands outside 0-127, comes back as null.'
     )
   )
 
@@ -207,14 +204,14 @@ function converterSection() {
 
   const update = () => {
     const n = stringToNote(input.value.trim())
-    out.setAttribute('value', String(n))
-    outFreq.setAttribute('value', n === -1 ? '—' : `${noteToFrequency(n).toFixed(3)} Hz`)
+    out.setAttribute('value', n === null ? 'null' : String(n))
+    outFreq.setAttribute('value', n === null ? '—' : `${noteToFrequency(n).toFixed(3)} Hz`)
     return n
   }
   input.addEventListener('input', update)
   btn.addEventListener('click', () => {
     const n = update()
-    if (n !== -1) play(noteToFrequency(n))
+    if (n !== null) play(noteToFrequency(n))
   })
   update()
 }
@@ -243,8 +240,8 @@ function apiSection() {
   const api = document.createElement('wl-api')
   s.append(api)
   ;(api as HTMLElement & { rows: unknown }).rows = [
-    { name: 'noteToString', kind: 'function', signature: '(noteNumber: number) => string | false', about: 'MIDI number to lowercase note name, e.g. 60 → "c4". Returns false for a non-integer.' },
-    { name: 'stringToNote', kind: 'function', signature: '(noteString: string) => number', about: 'Note name to MIDI number. Lowercase, sharps only. Returns -1 when unparseable.' },
-    { name: 'noteToFrequency', kind: 'function', signature: '(noteNumber: number) => number', about: 'MIDI number to Hz, equal temperament against A4 = 440.' },
+    { name: 'noteToString', kind: 'function', signature: '(noteNumber: number) => string | null', about: 'MIDI number to lowercase note name, e.g. 60 → "c4". Returns null for a non-integer or anything outside 0-127.' },
+    { name: 'stringToNote', kind: 'function', signature: '(noteString: string) => number | null', about: 'Note name to MIDI number. Sharps only, any case. Returns null when unparseable or out of range — test for null, since 0 is a valid note.' },
+    { name: 'noteToFrequency', kind: 'function', signature: '(noteNumber: number, a4hz?: number) => number', about: 'MIDI number to Hz, equal temperament against A4 = 440 unless another reference is given. Fractional notes allowed; NaN for non-numeric input.' },
   ]
 }

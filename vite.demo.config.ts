@@ -6,12 +6,23 @@ import { resolve } from 'path'
 export default defineConfig({
   root: 'demo',
   base: './',
-  // No source alias: this library resolves from node_modules, so the demo
-  // exercises the published tarball rather than the working tree.
+
+  resolve: {
+    // The demo exercises the working tree, not the last published tarball, so
+    // the deployed page always shows the behaviour of the code in this repo.
+    alias: {
+      'midi-translate': resolve(__dirname, 'src/index.mjs'),
+    },
+  },
 
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     target: 'es2022',
+    // The implementation is CommonJS; vite only transforms CJS under
+    // node_modules by default, and the alias above points outside it.
+    commonjsOptions: {
+      include: [/node_modules/, /src\/index\.js$/],
+    },
   },
 })

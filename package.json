@@ -3,18 +3,47 @@
   "version": "1.0.4",
   "description": "a library to help translate from midi notes to things and back again!",
   "main": "src/index.js",
+  "module": "src/index.mjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./src/index.mjs",
+      "require": "./src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "index.d.ts",
+    "README.md"
+  ],
   "scripts": {
     "test": "mocha",
+    "coverage": "nyc mocha",
     "demo": "vite --config vite.demo.config.ts",
     "demo:build": "vite build --config vite.demo.config.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucian-labs/midi-translate.git"
+  },
+  "keywords": [
+    "midi",
+    "note",
+    "frequency",
+    "pitch",
+    "music",
+    "tone"
+  ],
+  "engines": {
+    "node": ">=14"
   },
   "author": "Elijah Lucian",
   "license": "ISC",
   "devDependencies": {
-    "midi-translate": "^1.0.4",
-    "mocha": "^6.2.1",
-    "nodemon": "^1.19.3",
-    "nyc": "^14.1.1",
+    "mocha": "^11.1.0",
+    "nyc": "^17.1.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
   }

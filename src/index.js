@@ -1,38 +1,42 @@
 const notes = ['c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#', 'a', 'a#', 'b']
-const tuning = 400
+
+const MIDI_MIN = 0
+const MIDI_MAX = 127
+const A4_MIDI = 69
+const A4_HZ = 440
+
+// Anchored so junk containing a note letter ('ac4', 'c 4') is rejected rather
+// than resolving to a plausible-looking note.
+const NOTE_PATTERN = /^([a-g])(#?)(-?\d+)$/
 
 const noteToString = noteNumber => {
-  if (noteNumber % 1 !== 0) return false
-  const octave = Math.floor((noteNumber - 12) / 12)
+  if (typeof noteNumber !== 'number' || !Number.isInteger(noteNumber)) return null
+  if (noteNumber < MIDI_MIN || noteNumber > MIDI_MAX) return null
+
+  const octave = Math.floor(noteNumber / 12) - 1
   return `${notes[noteNumber % 12]}${octave}`
 }
 
 const stringToNote = noteString => {
-  for (let i in notes) {
-    if (noteString.includes(notes[i])) {
-      let note = parseInt(i)
-      let octave
+  if (typeof noteString !== 'string') return null
 
-      const parsedRemainder = noteString.split(notes[i])[1]
+  const match = NOTE_PATTERN.exec(noteString.trim().toLowerCase())
+  if (!match) return null
 
-      if (parsedRemainder.includes('#')) {
-        octave = parseInt(parsedRemainder.split('#')[1])
-        note += 1
-      } else {
-        octave = parseInt(parsedRemainder)
-      }
+  const [, letter, sharp, octave] = match
+  // Adding 1 for the sharp instead of looking up 'e#'/'b#' keeps the enharmonic
+  // spellings working: 'e#4' -> f4, 'b#4' -> c5.
+  const note = notes.indexOf(letter) + (sharp ? 1 : 0)
+  const noteNumber = note + 12 * parseInt(octave, 10) + 12
 
-      return note + 12 * octave + 12
-    }
-  }
-  return -1
+  if (noteNumber < MIDI_MIN || noteNumber > MIDI_MAX) return null
+  return noteNumber
 }
 
-const noteToFrequency = noteNumber => {
-  const a4hz = tuning
-  const a4midi = 69
+const noteToFrequency = (noteNumber, a4hz = A4_HZ) => {
+  if (!Number.isFinite(noteNumber) || !Number.isFinite(a4hz)) return NaN
 
-  return 2 ** ((noteNumber - a4midi) / 12) * 440
+  return 2 ** ((noteNumber - A4_MIDI) / 12) * a4hz
 }
 
 module.exports = { noteToString, stringToNote, noteToFrequency }
