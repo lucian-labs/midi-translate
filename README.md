@@ -1,5 +1,8 @@
 # Midi Translate
 
+**[Live demo →](https://midi-translate.lucianlabs.ca)** · [npm](https://www.npmjs.com/package/midi-translate) · [all packages](https://lucianlabs.ca/packages/)
+
+
 ## Features As Of Release 1.0.4
 
 - Midi note number to english note string
